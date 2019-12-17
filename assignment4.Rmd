@@ -1,0 +1,262 @@
+---
+title: "assignment4"
+author: "Lauren Low"
+date: "10/10/2019"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(mlbench)
+library(ISLR)
+library(rpart)
+library(rattle)
+library(s20x)
+library(ggplot2)
+library(randomForest)
+library(klaR)
+rm(list = ls())
+data("BreastCancer", package = "mlbench")
+letters = read.csv("~/Downloads/letters.csv")
+```
+
+```{r}
+BreastCancer$Id = NULL
+?BreastCancer
+head(BreastCancer)
+```
+
+##Question 1
+###Part a
+```{r}
+set.seed(100)
+train = sample(x = 1:dim(BreastCancer)[1], size = 400) 
+```
+
+###Part b
+```{r}
+pairs_plot_train <- pairs(BreastCancer[train, ], col = BreastCancer$Class, lower.panel = NULL, cex.labels = 2) +
+  title("Lauren Low 250348618")
+pairs_plot_train
+pairs_plot_test <- pairs(BreastCancer[-train, ], col = BreastCancer$Class, lower.panel = NULL, cex.labels = 2) +
+  title("Lauren Low 250348618")
+pairs_plot_test
+#In general, we can tell that malignant cells and tumors tend to be larger whereas benign tend to be smaller.
+```
+
+###Part c (i)
+```{r}
+tree3 = rpart(Class ~ Cl.thickness + Cell.size + Cell.shape + Marg.adhesion + Epith.c.size + Bare.nuclei + Bl.cromatin + Normal.nucleoli + Mitoses, data = BreastCancer, subset = train, method = "class", control = rpart.control(minsplit = 1, cp = 0, maxdepth = 3))
+
+tree6 = rpart(Class ~ Cl.thickness + Cell.size + Cell.shape + Marg.adhesion + Epith.c.size + Bare.nuclei + Bl.cromatin + Normal.nucleoli + Mitoses, data = BreastCancer, subset = train, method = "class", control = rpart.control(minsplit = 1, cp = 0, maxdepth = 6))
+
+tree9 = rpart(Class ~ Cl.thickness + Cell.size + Cell.shape + Marg.adhesion + Epith.c.size + Bare.nuclei + Bl.cromatin + Normal.nucleoli + Mitoses, data = BreastCancer, subset = train, method = "class", control = rpart.control(minsplit = 1, cp = 0, maxdepth = 9))
+```
+
+###Part c (ii)
+```{r}
+fancyRpartPlot(tree3)
+```
+
+###Part c (iii)
+```{r}
+#tree3
+breastcancer.predict3 = predict(tree3, BreastCancer, type = "class")
+in_sample3 = table(Class = BreastCancer[train, "Class"], Prediction = breastcancer.predict3[train])
+outof_sample3 = table(Class = BreastCancer[-train, "Class"], Prediction = breastcancer.predict3[-train])
+in_sample3
+outof_sample3
+
+#tree6
+breastcancer.predict6 = predict(tree6, BreastCancer, type = "class")
+in_sample6 = table(Class = BreastCancer[train, "Class"], Prediction = breastcancer.predict6[train])
+outof_sample6 = table(Class = BreastCancer[-train, "Class"], Prediction = breastcancer.predict6[-train])
+in_sample6
+outof_sample6
+
+#tree9
+breastcancer.predict9 = predict(tree9, BreastCancer, type = "class")
+in_sample9 = table(Class = BreastCancer[train, "Class"], Prediction = breastcancer.predict9[train])
+outof_sample9 = table(Class = BreastCancer[-train, "Class"], Prediction = breastcancer.predict9[-train])
+in_sample9
+outof_sample9
+```
+
+###Part c (iv)
+```{r}
+accuracy_is3 = (in_sample3[1,1] + in_sample3[2,2])/400
+accuracy_is3
+
+accuracy_is6 = (in_sample6[1,1] + in_sample6[2,2])/400
+accuracy_is6
+
+accuracy_is9 = (in_sample9[1,1] + in_sample9[2,2])/400
+accuracy_is9
+
+accuracy_os3 = (outof_sample3[1,1] + outof_sample3[2,2])/299
+accuracy_os3
+
+accuracy_os6 = (outof_sample6[1,1] + outof_sample6[2,2])/299
+accuracy_os6
+
+accuracy_os9 = (outof_sample9[1,1] + outof_sample9[2,2])/299
+accuracy_os9
+```
+
+###Part c (v)
+```{r}
+#The in-sample accuracy is better because we are fitting a model to a set of data then testing the model on the same data set that we fitted it to.  Whereas when we test the out-of-sample data, we are fitting a model to a similar data set, but not the data set that was used to create the model.  
+```
+
+###Part d (i) and (ii)
+```{r}
+tree_loss_90 = rpart(Class ~ Cl.thickness + Cell.size + Cell.shape + Marg.adhesion + Epith.c.size + Bare.nuclei + Bl.cromatin + Normal.nucleoli + Mitoses, data = BreastCancer, subset = train, method = "class", 
+              control = rpart.control(minsplit = 1, cp = 0, maxdepth = 3), 
+              parms = list(loss = matrix(c(0,90,10,0), nrow = 2)))
+tree_loss_90
+
+loss.predict90 = predict(tree_loss_90, BreastCancer, type = "class")
+in_sample90 = table(Class = BreastCancer[train, "Class"], Prediction = loss.predict90[train])
+outof_sample90 = table(Class = BreastCancer[-train, "Class"], Prediction = loss.predict90[-train])
+in_sample90
+outof_sample90
+
+
+tree_loss_70 = rpart(Class ~ Cl.thickness + Cell.size + Cell.shape + Marg.adhesion + Epith.c.size + Bare.nuclei + Bl.cromatin + Normal.nucleoli + Mitoses, data = BreastCancer, subset = train, method = "class", 
+              control = rpart.control(minsplit = 1, cp = 0, maxdepth = 3), 
+              parms = list(loss = matrix(c(0,70,30,0), nrow = 2)))
+tree_loss_70
+
+loss.predict70 = predict(tree_loss_70, BreastCancer, type = "class")
+in_sample70 = table(Class = BreastCancer[train, "Class"], Prediction = loss.predict70[train])
+outof_sample70 = table(Class = BreastCancer[-train, "Class"], Prediction = loss.predict70[-train])
+in_sample70
+outof_sample70
+
+
+tree_loss_40 = rpart(Class ~ Cl.thickness + Cell.size + Cell.shape + Marg.adhesion + Epith.c.size + Bare.nuclei + Bl.cromatin + Normal.nucleoli + Mitoses, data = BreastCancer, subset = train, method = "class", 
+              control = rpart.control(minsplit = 1, cp = 0, maxdepth = 3), 
+              parms = list(loss = matrix(c(0,40,60,0), nrow = 2)))
+tree_loss_40
+
+loss.predict40 = predict(tree_loss_40, BreastCancer, type = "class")
+in_sample40 = table(Class = BreastCancer[train, "Class"], Prediction = loss.predict40[train])
+outof_sample40 = table(Class = BreastCancer[-train, "Class"], Prediction = loss.predict40[-train])
+in_sample40
+outof_sample40
+
+
+tree_loss_95 = rpart(Class ~ Cl.thickness + Cell.size + Cell.shape + Marg.adhesion + Epith.c.size + Bare.nuclei + Bl.cromatin + Normal.nucleoli + Mitoses, data = BreastCancer, subset = train, method = "class", 
+              control = rpart.control(minsplit = 1, cp = 0, maxdepth = 3), 
+              parms = list(loss = matrix(c(0,5,95,0), nrow = 2)))
+tree_loss_95
+
+loss.predict95 = predict(tree_loss_95, BreastCancer, type = "class")
+in_sample95 = table(Class = BreastCancer[train, "Class"], Prediction = loss.predict95[train])
+outof_sample95 = table(Class = BreastCancer[-train, "Class"], Prediction = loss.predict95[-train])
+in_sample95
+outof_sample95
+```
+
+###Part d (iii)
+```{r}
+classsification <- c('90/10', '90/10', '70/30', '70/30', '60/40', '60/40', '5/95', '5/95' )
+sample_type <- c('in-sample', 'out-of-sample')
+sensitivity <- c(1, 0.9795, 1, 0.9795, 0.9510, 0.9081, 0.8601, 0.8265)
+specificity <- c(0.9494, 0.9104, 0.9455, 0.9104, 0.9922, 0.9602, 1, 0.9751)
+df <- data.frame(classsification, sample_type, sensitivity, specificity)
+df
+df_scatter <- ggplot(df) +
+  geom_point(aes(x = specificity, y = sensitivity, color = sample_type)) +
+  ggtitle("Lauren Low 250348618") 
+df_scatter
+```
+
+###Part d (iv)
+```{r}
+#In general, the in-sample tends to be more sensitive and specific thant the out-of-sample. And in general, the in-sample data has a higher accuracy but might not always be reflective of data sets that not have been fitted to the model.  On a separate note, two of the out-of-sample points overlap thus making it look like there are only three out-of-sample data points.  
+```
+
+###Part d (v)
+```{r}
+#If we were more concerned about false negatives than false positives, then in this context we would be more worried about someone being classified as benign when they have cancer than if they were to be classified as malignant of they didn't have cancer.  This also means that we are more concerned about having a high sensitivity than a high specificity because sensitivity describes the rate at which you correctly classify a malignant sample.  Based on the above scatter plot, you would probably want a classification that was similar to 90/10 or 70/30 for in-sample and one that was similar to 90/10 or 70/30 for out-of-sample.    
+```
+
+##Question 2
+###Part a
+```{r}
+set.seed(50)
+train_2 = sample(x = 1:dim(letters)[1], size = 18000) 
+```
+
+###Part b
+```{r}
+letters.train <- letters[train_2,]
+letters.test <- letters[-train_2,]
+```
+
+###Part c
+```{r}
+letters.test.jitter1 <- ggplot(letters.test) +
+  geom_jitter(aes(x = onpix, y = xbox, color = lettr)) +
+  ggtitle("Lauren Low 250348618") 
+letters.test.jitter1
+
+letters.test.jitter2 <- ggplot(letters.test) +
+  geom_jitter(aes(x = y2bar, y = x2bar, color = lettr)) +
+  ggtitle("Lauren Low 250348618") 
+letters.test.jitter2
+```
+
+###Part d 
+```{r}
+set.seed(100)
+letters_rf_10 <- randomForest(lettr~., letters.train, ntree = 10)
+letters_rf_10
+#OOB estimate is 12.15%
+
+set.seed(100)
+letters_rf_100 <- randomForest(lettr~., letters.train, ntree = 100)
+letters_rf_100
+#OOB estimate is 4.01%
+
+set.seed(100)
+letters_rf_1000 <- randomForest(lettr~., letters.train, ntree = 1000)
+letters_rf_1000
+#OOB estimate is 3.23%
+```
+
+###Part e
+```{r}
+predict.letters.1000 <- predict(letters_rf_1000, letters.test, type="response")
+table.letters.1000 <- table(Letter = letters.test$lettr, Prediction = predict.letters.1000)
+predict.letters.1000
+table.letters.1000
+accuracy_in <- sum(letters.test$lettr == predict.letters.1000)/2000
+#The letter P is commonly misclassified as the letter F and the accuracy of the classifier on the test set is 97.05%.  
+```
+
+###Part f
+```{r}
+letters.nb <- NaiveBayes(lettr~. , data = letters.test)
+```
+
+###Part g
+```{r}
+letters.nb.prediction <- predict(letters.nb, letters.test)$class
+accuracy_in <- sum(letters.test$lettr == letters.nb.prediction)/18000
+accuracy_out <- sum(letters.test$lettr == letters.nb.prediction)/2000
+accuracy_in
+accuracy_out
+#The in-sample accuracy is 7.07% and the out-of-sample accuracy is 63.65%.
+```
+
+###Part h
+```{r}
+letters.nb.table <- table(actual = letters.test$lettr, prediction = letters.nb.prediction)
+letters.nb.table
+#In general, this out-of-sample confusioan matrix shows that the data was misclassified much more frequently than when using the random forest method.  We can see this because the values along the diagonal are lower in this matrix than in the matrix generated by the random forest method. 
+```
+
